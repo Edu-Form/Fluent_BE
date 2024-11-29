@@ -1,4 +1,5 @@
 from pydantic import BaseModel 
+from typing import List
 
 class RoomList(BaseModel):
     room_name: str 
@@ -11,3 +12,10 @@ class Schedule(BaseModel):
     duration: int
     teacher_name: str 
     student_name: str 
+
+class MultipleSchedules(BaseModel):
+    dates: List[str]
+    time: int
+    duration: int
+    teacher_name: str
+    student_name: str

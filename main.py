@@ -1,7 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Query
 from configurations import collection_roomList, collection_schedule
 from database.schemas import room_list, schedule_list
-from database.models import RoomList, Schedule
+from database.models import RoomList, Schedule, MultipleSchedules
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -120,11 +120,53 @@ async def get_schedules(date: str, teacher: str):
 
     return parsedSchedule
 
+# Register schedule for multiple days during the same time. 
+@router.post("/schedules/auto/")
+async def create_multiple_schedules(schedules: MultipleSchedules):
+    all_dates = schedules.dates
+    time = schedules.time
+    duration = schedules.duration
+    teacher_name = schedules.teacher_name
+    student_name = schedules.student_name
+    room_name = ""
+    all_saved_rooms = []
 
 
+    # For each date 
+    for date in all_dates:
+
+        # Find an empty room and return. 
+        filtered_schedules = collection_schedule.find({"date": date, "time": time})
+
+        # Get all room names
+        all_room_names = []
+        all_rooms = collection_roomList.find()
+        for room in all_rooms:
+            all_room_names.append(room["room_name"])
+        print(all_room_names)
+
+        # Cross out rooms that are unavailable 
+        available_room_names = all_room_names 
+        print(filtered_schedules)
+        for schedule in filtered_schedules:
+            print(schedule)
+            available_room_names.remove(schedule["room_name"])
+        
+        # Check if there is atleast one available room. 
+        if len(available_room_names) != 0:
+            # Save the first room in room_name. 
+            room_name = available_room_names[0]
+        else:
+            return 
 
 
-
+        # Add new schedule with the room_name to the database.
+        each_schedule = {"room_name": room_name, "date": date, "time": time, "duration": duration, "teacher_name": teacher_name, "student_name": student_name}
+        resp = collection_schedule.insert_one(dict(each_schedule))
+        all_saved_rooms.append(room_name)
+    
+    
+    return {"status_code":200, "all_dates": all_dates, "all_rooms": all_saved_rooms, "time": time}
 
 
 
