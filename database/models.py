@@ -19,3 +19,8 @@ class MultipleSchedules(BaseModel):
     duration: int
     teacher_name: str
     student_name: str
+
+class Diary(BaseModel):
+    date: str
+    original_text: str 
+    modified_text: str

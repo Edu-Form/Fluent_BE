@@ -1,7 +1,8 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Query
-from configurations import collection_roomList, collection_schedule
+from configurations import collection_roomList, collection_schedule, collection_diary
 from database.schemas import room_list, schedule_list
-from database.models import RoomList, Schedule, MultipleSchedules
+from database.models import RoomList, Schedule, MultipleSchedules, Diary
+from bson import ObjectId
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -63,6 +64,18 @@ async def get_schedules():
     schedules = [serialize_document(schedule) for schedule in filtered_schedules]
     return schedules
 
+# Delete schedule
+@router.delete("/schedules/")
+async def delete_schedule(schedule_id: str):
+    try: 
+        configured_item_id = ObjectId(schedule_id)
+    except: 
+        return {"message": f"Schedule with ID {schedule_id} is not a valid ID"}
+    result = collection_schedule.delete_one({"_id": configured_item_id})
+    if result.deleted_count == 0:
+        return {"message": f"Schedule with ID {schedule_id} doesn't exist"}
+    
+    return {"message": f"Schedule with ID {schedule_id} deleted successfully"}
 
 # Get schedules for a specific date
 # Need to sort by room, time in asc order (low to high). 
@@ -169,5 +182,20 @@ async def create_multiple_schedules(schedules: MultipleSchedules):
     return {"status_code":200, "all_dates": all_dates, "all_rooms": all_saved_rooms, "time": time}
 
 
+@router.get("/diary/")
+async def get_diaries():
+    filtered_diaries = collection_diary.find().sort([("room_name", 1), ("time", 1)])
+    filtered_diaries = [serialize_document(diary) for diary in filtered_diaries]
+    return filtered_diaries
 
-app.include_router(router)
+# # Create new schedule 
+# @router.post("/diary/")
+# async def create_diary(raw_diary: Diary):
+#     try:
+#         resp = collection_schedule.insert_one(dict(new_schedule))
+#         return {"status_code":200, "id":str(resp.inserted_id)}
+
+#     except Exception as e:
+#         return HTTPException(status_code=500, detail=f"Some error occured {e}")
+
+# app.include_router(router, prefix="/api")
