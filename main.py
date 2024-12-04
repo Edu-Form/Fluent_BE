@@ -198,4 +198,4 @@ async def get_diaries():
 #     except Exception as e:
 #         return HTTPException(status_code=500, detail=f"Some error occured {e}")
 
-# app.include_router(router, prefix="/api")
+app.include_router(router, prefix="/api")
