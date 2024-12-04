@@ -1,7 +1,8 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Query
 from configurations import collection_roomList, collection_schedule, collection_diary
 from database.schemas import room_list, schedule_list
-from database.models import RoomList, Schedule, MultipleSchedules, Diary
+from database.models import RoomList, Schedule, MultipleSchedules, RawDiary, Diary
+from ai import ai_diary
 from bson import ObjectId
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -65,7 +66,7 @@ async def get_schedules():
     return schedules
 
 # Delete schedule
-@router.delete("/schedules/")
+@router.delete("/schedules/{schedule_id}")
 async def delete_schedule(schedule_id: str):
     try: 
         configured_item_id = ObjectId(schedule_id)
@@ -181,21 +182,33 @@ async def create_multiple_schedules(schedules: MultipleSchedules):
     
     return {"status_code":200, "all_dates": all_dates, "all_rooms": all_saved_rooms, "time": time}
 
-
+# Get all diary. 
 @router.get("/diary/")
 async def get_diaries():
     filtered_diaries = collection_diary.find().sort([("room_name", 1), ("time", 1)])
     filtered_diaries = [serialize_document(diary) for diary in filtered_diaries]
     return filtered_diaries
 
-# # Create new schedule 
-# @router.post("/diary/")
-# async def create_diary(raw_diary: Diary):
-#     try:
-#         resp = collection_schedule.insert_one(dict(new_schedule))
-#         return {"status_code":200, "id":str(resp.inserted_id)}
 
-#     except Exception as e:
-#         return HTTPException(status_code=500, detail=f"Some error occured {e}")
+# Create new diary, modify, and save AI corrected diary. 
+@router.post("/diary/")
+async def create_diary(raw_diary: RawDiary):
+    date = raw_diary.date
+    original_text = raw_diary.original_text
+    modified_text = ai_diary(original_text)
+
+    modified_diary = {
+        "date": date,
+        "original_text": original_text,
+        "modified_text": modified_text
+    }
+
+    try:
+        resp = collection_diary.insert_one(dict(modified_diary))
+        return {"status_code":200, "id":str(resp.inserted_id), "date": date, "message": modified_text}
+
+    except Exception as e:
+        return {"status_code":500, "detail":f"Some error occured {e}"}
+
 
 app.include_router(router, prefix="/api")

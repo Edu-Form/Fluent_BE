@@ -20,6 +20,10 @@ class MultipleSchedules(BaseModel):
     teacher_name: str
     student_name: str
 
+class RawDiary(BaseModel):
+    date: str
+    original_text: str 
+
 class Diary(BaseModel):
     date: str
     original_text: str 
