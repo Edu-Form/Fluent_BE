@@ -8,6 +8,7 @@ client = MongoClient(uri, server_api=ServerApi('1'))
 
 db = client.room_allocation_db
 collection_roomList = db["roomList"]
-collection_schedule= db["schedule"]
-collection_diary= db["diary"]
+collection_schedule = db["schedule"]
+collection_diary = db["diary"]
+collection_user = db["user"]
 

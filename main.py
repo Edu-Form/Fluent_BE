@@ -1,7 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Query
-from configurations import collection_roomList, collection_schedule, collection_diary
+from configurations import collection_roomList, collection_schedule, collection_diary, collection_user
 from database.schemas import room_list, schedule_list
-from database.models import RoomList, Schedule, MultipleSchedules, RawDiary, Diary
+from database.models import RoomList, Schedule, MultipleSchedules, RawDiary, User
 from ai import ai_diary
 from bson import ObjectId
 
@@ -45,6 +45,35 @@ async def get_all_rooms():
     data = collection_roomList.find()
     rooms = [serialize_document(room) for room in data]
     return rooms
+
+
+# Return all users. 
+@router.get("/user/")
+async def get_all_users():
+    data = collection_user.find()
+    users = [serialize_document(user) for user in data]
+    return users
+
+# Check if user exists. 
+@router.get("/user/{user_number}")
+async def get_all_users(user_number: str):
+    data = collection_user.find({"user_number":user_number})
+    users = [serialize_document(user) for user in data]
+    if len(users) == 1:
+        return users
+    else:
+        # Return a response indicating the user doesn't exist
+        return {"message":"no user"}
+
+# Register user. 
+@router.post("/user/")
+async def create_user(new_user: User):
+    try:
+        resp = collection_user.insert_one(dict(new_user))
+        return {"status_code":200, "id":str(resp.inserted_id), "user_name": new_user.user_name, "user_number": new_user.user_number, "user_number": new_user.type}
+
+    except Exception as e:
+        return HTTPException(status_code=500, detail=f"Some error occured {e}")
 
 
 # Create new schedule 
@@ -182,10 +211,19 @@ async def create_multiple_schedules(schedules: MultipleSchedules):
     
     return {"status_code":200, "all_dates": all_dates, "all_rooms": all_saved_rooms, "time": time}
 
+
 # Get all diary. 
 @router.get("/diary/")
 async def get_diaries():
-    filtered_diaries = collection_diary.find().sort([("room_name", 1), ("time", 1)])
+    filtered_diaries = collection_diary.find().sort([("date", 1)])
+    filtered_diaries = [serialize_document(diary) for diary in filtered_diaries]
+    return filtered_diaries
+
+
+# Get diaries for student name. 
+@router.get("/diary/student/{student_name}")
+async def get_diaries(student_name: str):
+    filtered_diaries = collection_diary.find({"student_name": student_name}).sort([("date", 1)])
     filtered_diaries = [serialize_document(diary) for diary in filtered_diaries]
     return filtered_diaries
 
@@ -193,11 +231,13 @@ async def get_diaries():
 # Create new diary, modify, and save AI corrected diary. 
 @router.post("/diary/")
 async def create_diary(raw_diary: RawDiary):
+    student_name = raw_diary.student_name
     date = raw_diary.date
     original_text = raw_diary.original_text
     modified_text = ai_diary(original_text)
 
     modified_diary = {
+        "student_name": student_name,
         "date": date,
         "original_text": original_text,
         "modified_text": modified_text
@@ -205,7 +245,7 @@ async def create_diary(raw_diary: RawDiary):
 
     try:
         resp = collection_diary.insert_one(dict(modified_diary))
-        return {"status_code":200, "id":str(resp.inserted_id), "date": date, "message": modified_text}
+        return {"status_code":200, "id":str(resp.inserted_id), "student_name": student_name, "date": date, "message": modified_text}
 
     except Exception as e:
         return {"status_code":500, "detail":f"Some error occured {e}"}

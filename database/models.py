@@ -21,10 +21,11 @@ class MultipleSchedules(BaseModel):
     student_name: str
 
 class RawDiary(BaseModel):
+    student_name: str
     date: str
     original_text: str 
 
-class Diary(BaseModel):
-    date: str
-    original_text: str 
-    modified_text: str
+class User(BaseModel):
+    user_name: str 
+    user_number: str
+    type: str 
