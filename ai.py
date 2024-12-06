@@ -8,7 +8,7 @@ from openai import OpenAI
 # openai_api_key = os.getenv("OPENAI_API_KEY")
 
 
-client = OpenAI(api_key = "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")
+client = OpenAI(api_key = "")
 
 def ai_diary(original_text):
     completion = client.chat.completions.create(
