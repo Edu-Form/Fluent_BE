@@ -1,8 +1,8 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Query
-from configurations import collection_roomList, collection_schedule, collection_diary, collection_user
+from configurations import collection_roomList, collection_schedule, collection_diary, collection_user, collection_quizlet
 from database.schemas import room_list, schedule_list
-from database.models import RoomList, Schedule, MultipleSchedules, RawDiary, User
-from ai import ai_diary
+from database.models import RoomList, Schedule, MultipleSchedules, RawDiary, User, RawQuizlet
+from ai import ai_diary, parse_quizlet, translate_quizlet
 from bson import ObjectId
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -222,7 +222,7 @@ async def get_diaries():
 
 # Get diaries for student name. 
 @router.get("/diary/student/{student_name}")
-async def get_diaries(student_name: str):
+async def get_student_diaries(student_name: str):
     filtered_diaries = collection_diary.find({"student_name": student_name}).sort([("date", 1)])
     filtered_diaries = [serialize_document(diary) for diary in filtered_diaries]
     return filtered_diaries
@@ -249,6 +249,50 @@ async def create_diary(raw_diary: RawDiary):
 
     except Exception as e:
         return {"status_code":500, "detail":f"Some error occured {e}"}
+    
+
+
+# Get all quizlets. 
+@router.get("/quizlet/")
+async def get_quizlets():
+    filtered_quizlets = collection_quizlet.find().sort([("date", 1)])
+    filtered_quizlets = [serialize_document(quizlet) for quizlet in filtered_quizlets]
+    return filtered_quizlets
+
+
+# Get quizlets for student name. 
+@router.get("/quizlet/student/{student_name}")
+async def get_student_quizlets(student_name: str):
+    filtered_quizlets = collection_quizlet.find({"student_name": student_name}).sort([("date", 1)])
+    filtered_quizlets = [serialize_document(quizlet) for quizlet in filtered_quizlets]
+    return filtered_quizlets
+
+
+
+# Create new quizlet. Return list of words with translation. 
+@router.post("/quizlet/")
+async def create_quizlet(raw_quizlet: RawQuizlet):
+    student_name = raw_quizlet.student_name
+    date = raw_quizlet.date
+    original_text = raw_quizlet.original_text
+    eng_quizlet = parse_quizlet(original_text)
+    kor_quizlet = translate_quizlet(eng_quizlet)
+
+    modified_quizlet = {
+        "student_name": student_name,
+        "date": date,
+        "original_text": original_text,
+        "eng_quizlet": eng_quizlet,
+        "kor_quizlet": kor_quizlet
+    }
+
+    try:
+        resp = collection_quizlet.insert_one(dict(modified_quizlet))
+        return {"status_code":200, "id":str(resp.inserted_id), "student_name": student_name, "date": date, "eng_quizlet": eng_quizlet, "kor_quizlet": kor_quizlet}
+
+    except Exception as e:
+        return {"status_code":500, "detail":f"Some error occured {e}"}
+
 
 
 app.include_router(router, prefix="/api")

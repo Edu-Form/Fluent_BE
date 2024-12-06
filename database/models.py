@@ -29,3 +29,8 @@ class User(BaseModel):
     user_name: str 
     user_number: str
     type: str 
+
+class RawQuizlet(BaseModel):
+    student_name: str 
+    date: str 
+    original_text: str 
