@@ -2,7 +2,7 @@ from fastapi import FastAPI, APIRouter, HTTPException, Query
 from configurations import collection_roomList, collection_schedule, collection_diary, collection_user, collection_quizlet
 from database.schemas import room_list, schedule_list
 from database.models import RoomList, Schedule, MultipleSchedules, RawDiary, User, RawQuizlet
-from ai import ai_diary, parse_quizlet, translate_quizlet
+from ai import ai_diary_correction, ai_diary_expressions, ai_diary_summary, generate_inline_comparison_html, parse_quizlet, translate_quizlet
 from bson import ObjectId
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -234,18 +234,24 @@ async def create_diary(raw_diary: RawDiary):
     student_name = raw_diary.student_name
     date = raw_diary.date
     original_text = raw_diary.original_text
-    modified_text = ai_diary(original_text)
+    diary_correction = ai_diary_correction(original_text)
+    modified_diary_correction = generate_inline_comparison_html(original_text, diary_correction)
+    diary_expressions = ai_diary_expressions(original_text)
+    diary_summary = ai_diary_summary(original_text)
 
     modified_diary = {
         "student_name": student_name,
         "date": date,
         "original_text": original_text,
-        "modified_text": modified_text
+        "diary_correction": diary_correction, 
+        "modified_diary_correction": modified_diary_correction,
+        "diary_expressions": diary_expressions, 
+        "diary_summary": diary_summary
     }
 
     try:
         resp = collection_diary.insert_one(dict(modified_diary))
-        return {"status_code":200, "id":str(resp.inserted_id), "student_name": student_name, "date": date, "message": modified_text}
+        return {"status_code":200, "id":str(resp.inserted_id), "student_name": student_name, "date": date, "message": modified_diary}
 
     except Exception as e:
         return {"status_code":500, "detail":f"Some error occured {e}"}
