@@ -51,6 +51,7 @@ def ai_diary_expressions(original_text):
                     "- Feel free to be slightly creative in line with the contents of the diary when recommending new expressions.\n"
                     "- Recommend new sentence structures.\n"
                     "- Recommend casual versions of the same sentence.\n"
+                    "- Always include the number at the beginning of each expression.\n"
                     "- On the input, each sentence from the diary corrected text is separated by a newline character '\\n'.\n"
                     "- Sentences must be no longer than 50 characters.\n\n"
                     "Expected response example:\n"
