@@ -123,7 +123,7 @@ async def get_schedules(param: str):
 
 @router.get("/schedules/student/{param}/")
 async def get_schedules(param: str):
-    filtered_schedules = collection_schedule.find({"student_name": param}).sort([("room_name", 1), ("time", 1)])
+    filtered_schedules = collection_schedule.find({"student_name": param}).sort([("date", -1), ("time", 1), ("room_name", 1)])
     schedules = [serialize_document(schedule) for schedule in filtered_schedules]
     return schedules
 
@@ -299,6 +299,10 @@ async def create_quizlet(raw_quizlet: RawQuizlet):
     except Exception as e:
         return {"status_code":500, "detail":f"Some error occured {e}"}
 
-
+# Delete all schedules. Use in case of Emergency. 
+# @router.get("/delete/")
+# async def delete_all_schedules():
+#     result = collection_schedule.delete_many({})
+#     return {"message": "done"}
 
 app.include_router(router, prefix="/api")
