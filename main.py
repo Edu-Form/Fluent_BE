@@ -117,13 +117,13 @@ async def get_schedules(param: str):
 
 @router.get("/schedules/teacher/{param}/")
 async def get_schedules(param: str):
-    filtered_schedules = collection_schedule.find({"teacher_name": param}).sort([("room_name", 1), ("time", 1)])
+    filtered_schedules = collection_schedule.find({"teacher_name": param}).sort([("date", 1), ("time", 1), ("room_name", 1)])
     schedules = [serialize_document(schedule) for schedule in filtered_schedules]
     return schedules
 
 @router.get("/schedules/student/{param}/")
 async def get_schedules(param: str):
-    filtered_schedules = collection_schedule.find({"student_name": param}).sort([("date", -1), ("time", 1), ("room_name", 1)])
+    filtered_schedules = collection_schedule.find({"student_name": param}).sort([("date", 1), ("time", 1), ("room_name", 1)])
     schedules = [serialize_document(schedule) for schedule in filtered_schedules]
     return schedules
 
