@@ -261,7 +261,7 @@ async def create_diary(raw_diary: RawDiary):
 # Get all quizlets. 
 @router.get("/quizlet/")
 async def get_quizlets():
-    filtered_quizlets = collection_quizlet.find().sort([("date", 1)])
+    filtered_quizlets = collection_quizlet.find().sort([("date", -1)])
     filtered_quizlets = [serialize_document(quizlet) for quizlet in filtered_quizlets]
     return filtered_quizlets
 
@@ -269,7 +269,7 @@ async def get_quizlets():
 # Get quizlets for student name. 
 @router.get("/quizlet/student/{student_name}")
 async def get_student_quizlets(student_name: str):
-    filtered_quizlets = collection_quizlet.find({"student_name": student_name}).sort([("date", 1)])
+    filtered_quizlets = collection_quizlet.find({"student_name": student_name}).sort([("date", -1)])
     filtered_quizlets = [serialize_document(quizlet) for quizlet in filtered_quizlets]
     return filtered_quizlets
 
