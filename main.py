@@ -232,6 +232,7 @@ async def get_student_diaries(student_name: str):
 @router.post("/diary/")
 async def create_diary(raw_diary: RawDiary):
     student_name = raw_diary.student_name
+    class_date = raw_diary.class_date
     date = raw_diary.date
     original_text = raw_diary.original_text
     diary_correction = ai_diary_correction(original_text)
@@ -241,6 +242,7 @@ async def create_diary(raw_diary: RawDiary):
 
     modified_diary = {
         "student_name": student_name,
+        "class_date": class_date,
         "date": date,
         "original_text": original_text,
         "diary_correction": diary_correction, 
@@ -279,6 +281,7 @@ async def get_student_quizlets(student_name: str):
 @router.post("/quizlet/")
 async def create_quizlet(raw_quizlet: RawQuizlet):
     student_name = raw_quizlet.student_name
+    class_date = raw_quizlet.class_date
     date = raw_quizlet.date
     original_text = raw_quizlet.original_text
     eng_quizlet = parse_quizlet(original_text)
@@ -286,6 +289,7 @@ async def create_quizlet(raw_quizlet: RawQuizlet):
 
     modified_quizlet = {
         "student_name": student_name,
+        "class_date": class_date,
         "date": date,
         "original_text": original_text,
         "eng_quizlet": eng_quizlet,

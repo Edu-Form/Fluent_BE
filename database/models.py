@@ -22,6 +22,7 @@ class MultipleSchedules(BaseModel):
 
 class RawDiary(BaseModel):
     student_name: str
+    class_date: str
     date: str
     original_text: str 
 
@@ -32,5 +33,6 @@ class User(BaseModel):
 
 class RawQuizlet(BaseModel):
     student_name: str 
+    class_date: str
     date: str 
     original_text: str 
