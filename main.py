@@ -228,6 +228,19 @@ async def get_student_diaries(student_name: str):
     return filtered_diaries
 
 
+# Get Diary URLs for students taught by the teacher. 
+@router.get("/diary/teacher/{teacher_name}")
+async def get_teacher_diaries(teacher_name: str):
+    students_list = []
+    diary_url_list = []
+    filtered_schedules = collection_schedule.find({"teacher_name": teacher_name}).sort([("date", -1), ("time", -1), ("room_name", 1)])
+    for schedule in filtered_schedules:
+        if schedule["student_name"] not in students_list:
+            students_list.append(schedule["student_name"])
+    for student in students_list:
+        diary_url_list.append(f"diary?user={student}&type=student")
+    return diary_url_list
+
 # Create new diary, modify, and save AI corrected diary. 
 @router.post("/diary/")
 async def create_diary(raw_diary: RawDiary):
