@@ -4,6 +4,7 @@ from database.schemas import room_list, schedule_list
 from database.models import RoomList, Schedule, MultipleSchedules, RawDiary, User, RawQuizlet
 from ai import ai_diary_correction, ai_diary_expressions, ai_diary_summary, generate_inline_comparison_html, parse_quizlet, translate_quizlet
 from bson import ObjectId
+from datetime import datetime
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -315,6 +316,66 @@ async def create_quizlet(raw_quizlet: RawQuizlet):
 
     except Exception as e:
         return {"status_code":500, "detail":f"Some error occured {e}"}
+
+
+@router.get("/payment/{month}")
+async def get_month_payments(month: str):
+    try:
+        # Validate the month format
+        try:
+            datetime.strptime(month, "%Y. %m")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid month format. Use 'YYYY. MM'.")
+
+        cleaned_data = []
+
+        # Fetch all users
+        data = collection_user.find({"type": "teacher"})
+
+        for user in data:
+            # Initialize the total count
+            total_schedule_count = 0
+
+            # Extract the teacher's name
+            teacher_name = user.get("user_name")
+
+            # Query schedules matching the teacher name and month
+            filtered_schedules_cursor = collection_schedule.find({
+                "teacher_name": teacher_name,
+                "date": {"$regex": f"^{month}\\."}  # Matches dates starting with 'YYYY. MM.'
+            }).sort([
+                ("date", 1),
+                ("time", 1),
+                ("room_name", 1)
+            ])
+
+            # Convert cursor to list once
+            filtered_schedules = list(filtered_schedules_cursor)
+
+            total_schedule_count = len(list(filtered_schedules))
+
+            # Count schedules per student
+            student_schedule_counts = {}
+
+            for schedule in filtered_schedules:
+                student_name = schedule.get("student_name")
+                if student_name:
+                    student_schedule_counts[student_name] = student_schedule_counts.get(student_name, 0) + 1
+
+            # Add the result to cleaned_data
+            cleaned_data.append({
+                "teacher_name": teacher_name,
+                "teacher_total_count": total_schedule_count,
+                "student_schedule_counts": student_schedule_counts
+            })
+
+        return cleaned_data
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 
 # Delete all schedules. Use in case of Emergency. 
 # @router.get("/delete/")
